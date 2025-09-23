@@ -32,7 +32,7 @@ public class BreachConfig
     
     public class TeslaGateSettings
     {
-        [Description("Tesla Gate NTF")]
+        [Description("Tesla Gate Bypass Config")]
         public bool TeslaGateSettingsEnabled { get; set; } = true;
     }
     

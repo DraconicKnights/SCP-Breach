@@ -47,6 +47,17 @@ public class TeslaEvents : ConditionalEventHandler<BreachConfig.TeslaGateSetting
             ev.Player.SendConsoleMessage("Tesla Gate Disabled for NTF Passage", "red");
         }
     }
+
+    public override void OnPlayerDeath(PlayerDeathEventArgs ev)
+    {
+        base.OnPlayerDeath(ev);
+        
+        if (!TeslaControl.SCP096Active) return;
+        
+        if (ev.Player.Role != RoleTypeId.Scp096) return;
+        
+        TeslaControl.SCP096Active = false;
+    }
     
     public override bool IsEnabled(BreachConfig.TeslaGateSettings section)
     {
