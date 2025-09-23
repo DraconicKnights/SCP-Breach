@@ -21,7 +21,7 @@ public class LocationCommand : ICommand
             return false;
         }
         
-        Vector3 loc = Player.Get(sender).ReferenceHub.transform.position;
+        Vector3 loc = Player.Get(sender).Position;
         
         response = $"Location: {loc.x}, {loc.y}, {loc.z}";
         return true;   

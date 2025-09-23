@@ -3,6 +3,7 @@ using MEC;
 using PlayerRoles;
 using UnityEngine;
 using Logger = LabApi.Features.Console.Logger;
+using Object = UnityEngine.Object;
 
 namespace SCP_Breach.Features.Duels;
 
@@ -112,11 +113,13 @@ public class DuelControl
         {
             if (!DuelArray.PlayerDuelItems.ContainsKey(player))
             {
+                Logger.Info($"Storing items for player {player.Nickname}");
                 DuelArray.PlayerDuelItems[player] = new List<Item>();
             }
 
             foreach (var item in player.Items)
             {
+                Logger.Info($"Adding item {item.Type.ToString()} to cleanup list");
                 DuelArray.PlayerDuelItems[player].Add(item);
             }
 
@@ -155,6 +158,7 @@ public class DuelControl
             DuelArray.OriginalPositions.Remove(player);
             DuelArray.OriginalItems.Remove(player);
 
+            // Not ready for use. more of an exmaple
             //CleanupDroppedItemsAtLocation(player);
         }
 
@@ -178,24 +182,31 @@ public class DuelControl
                     {
                         try
                         {
-                            Logger.Info($"Item {item.Type.ToString()} has been found");
-
-                            // Check if the item is the expected type
                             if (item == null)
                             {
                                 Logger.Info("Item is null, skipping...");
-                                continue; // Skip null items
+                                continue;
                             }
+                            
+                            Logger.Info($"Item {item.Type.ToString()} has been found");
 
-                            // Destroy the item's GameObject if it's valid
-                            if (item?.GameObject != null)
+                            try
                             {
-                                UnityEngine.Object.Destroy(item.GameObject);
-                                Logger.Info($"Item {item.Type.ToString()} has been destroyed");
+                                GameObject itemGameObject = item.GameObject;
+
+                                if (itemGameObject != null)
+                                {
+                                    Object.Destroy(itemGameObject);
+                                    Logger.Info($"Item {item.Type.ToString()} has been destroyed");
+                                }
+                                else
+                                {
+                                    Logger.Info($"Item {item.Type.ToString()} has already been destroyed, skipping...");
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                Logger.Info($"Item {item.Type.ToString()} has been destroyed");
+                                Logger.Error($"Error while processing item {item?.Type.ToString()}: {ex.Message}\n{ex.StackTrace}");
                             }
                         }
                         catch (Exception ex)
