@@ -24,6 +24,12 @@ public class BreachConfig
         [Description("SCP 914 Events")]
         public bool Scp914Events { get; set; } = true;
         
+        [Description("SCP 914 Knob Settings")]
+        public Scp914KnobSettings Scp914KnobSettings { get; set; } = new();
+    }
+
+    public class Scp914KnobSettings
+    {
         // Role Logic
 
         [Description("SCP 914 Role Rough Transformations")]

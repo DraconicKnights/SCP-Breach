@@ -34,7 +34,7 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
 
     private void PlayerItemCheck(Player player, Item item, Scp914KnobSetting knobSetting)
     {
-        if (!GetConfig().Scp914Events.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
+        if (!GetConfig().Scp914Events.Scp914KnobSettings.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
 
         var transformations = GetItemTransformationDictionary(knobSetting);
         
@@ -57,7 +57,7 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
 
     private void PlayerRoleCheck(Player player, RoleTypeId roleTypeId, Scp914KnobSetting knobSetting)
     {
-        if (!GetConfig().Scp914Events.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
+        if (!GetConfig().Scp914Events.Scp914KnobSettings.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
         
         var transformations = GetRoleTransformationDictionary(knobSetting);
         
@@ -71,8 +71,8 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
     {
         return (knobSetting switch
         {
-            Scp914KnobSetting.Rough => GetConfig().Scp914Events.RoleRoughTransformations,
-            Scp914KnobSetting.VeryFine => GetConfig().Scp914Events.RoleVeryFineTransformations,
+            Scp914KnobSetting.Rough => GetConfig().Scp914Events.Scp914KnobSettings.RoleRoughTransformations,
+            Scp914KnobSetting.VeryFine => GetConfig().Scp914Events.Scp914KnobSettings.RoleVeryFineTransformations,
             _ => null
         })!;
     }
@@ -81,8 +81,8 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
     {
         return (knobSetting switch
         {
-            Scp914KnobSetting.Rough => GetConfig().Scp914Events.ItemRoughTransformations,
-            Scp914KnobSetting.VeryFine => GetConfig().Scp914Events.ItemVeryFineTransformations,
+            Scp914KnobSetting.Rough => GetConfig().Scp914Events.Scp914KnobSettings.ItemRoughTransformations,
+            Scp914KnobSetting.VeryFine => GetConfig().Scp914Events.Scp914KnobSettings.ItemVeryFineTransformations,
             _ => null
         })!;
     }
