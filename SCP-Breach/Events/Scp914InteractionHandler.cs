@@ -1,3 +1,4 @@
+using InventorySystem.Items;
 using LabApi.Events.Arguments.Scp914Events;
 using LabApi.Events.CustomHandlers;
 using LabApi.Features.Console;
@@ -41,15 +42,16 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
         {
             try
             {
-                UnityEngine.Object.Destroy(item.Base.gameObject);
+                player.RemoveItem(item);
+                player.AddItem(newItem);
+                
+                Logger.Info($"Item {item.Type.ToString()} has been transformed to {newItem.ToString()}");
             }
             catch (Exception e)
             {
                 Logger.Error($"Error while destroying item {item.Type.ToString()}: {e.Message}\n{e.StackTrace}");
                 throw;
             }
-            
-            player.AddItem(newItem);
         }
     }
 
@@ -80,6 +82,7 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
         return (knobSetting switch
         {
             Scp914KnobSetting.Rough => GetConfig().Scp914Events.ItemRoughTransformations,
+            Scp914KnobSetting.VeryFine => GetConfig().Scp914Events.ItemVeryFineTransformations,
             _ => null
         })!;
     }

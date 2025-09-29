@@ -58,7 +58,12 @@ public class BreachConfig
 
         public Dictionary<ItemType, ItemType> ItemRoughTransformations { get; set; } = new()
         {
-            { ItemType.Coin, ItemType.Coal },
+            { ItemType.Coin, ItemType.GrenadeHE },
+        };
+        
+        public Dictionary<ItemType, ItemType> ItemVeryFineTransformations { get; set; } = new()
+        {
+            { ItemType.Coin, ItemType.GrenadeHE },
         };
         
         // SCP 914 Knob Logic
