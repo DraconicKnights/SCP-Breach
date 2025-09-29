@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using PlayerRoles;
 using SCP_Breach.Utils.Data;
+using Scp914;
 
 namespace SCP_Breach.Config;
 
@@ -22,6 +23,55 @@ public class BreachConfig
     {
         [Description("SCP 914 Events")]
         public bool Scp914Events { get; set; } = true;
+        
+        // Role Logic
+
+        [Description("SCP 914 Role Rough Transformations")]
+        public Dictionary<RoleTypeId, RoleTypeId> RoleRoughTransformations { get; set; } = new()
+        {
+            { RoleTypeId.ClassD, RoleTypeId.Scp0492 },
+            { RoleTypeId.ChaosConscript, RoleTypeId.ClassD },
+            { RoleTypeId.ChaosRifleman, RoleTypeId.ChaosConscript },
+            { RoleTypeId.ChaosMarauder, RoleTypeId.ChaosRifleman },
+            { RoleTypeId.ChaosRepressor, RoleTypeId.ChaosMarauder },
+            { RoleTypeId.FacilityGuard, RoleTypeId.Scientist },
+            { RoleTypeId.NtfPrivate, RoleTypeId.FacilityGuard },
+            { RoleTypeId.NtfSergeant, RoleTypeId.NtfPrivate },
+            { RoleTypeId.NtfCaptain, RoleTypeId.NtfSergeant },
+            { RoleTypeId.Scientist, RoleTypeId.ClassD }
+        };
+
+        [Description("SCP 914 Role Very Fine Transformations")]
+        public Dictionary<RoleTypeId, RoleTypeId> RoleVeryFineTransformations { get; set; } = new()
+        {
+            { RoleTypeId.ClassD, RoleTypeId.Scientist },
+            { RoleTypeId.ChaosConscript, RoleTypeId.ChaosRifleman },
+            { RoleTypeId.ChaosRifleman, RoleTypeId.ChaosMarauder },
+            { RoleTypeId.ChaosMarauder, RoleTypeId.ChaosRepressor },
+            { RoleTypeId.FacilityGuard, RoleTypeId.NtfPrivate },
+            { RoleTypeId.NtfPrivate, RoleTypeId.NtfSergeant },
+            { RoleTypeId.NtfSergeant, RoleTypeId.NtfCaptain },
+            { RoleTypeId.Scientist, RoleTypeId.FacilityGuard }
+        };
+        
+        // Weapon Logic
+
+        public Dictionary<ItemType, ItemType> ItemRoughTransformations { get; set; } = new()
+        {
+            { ItemType.Coin, ItemType.Coal },
+        };
+        
+        // SCP 914 Knob Logic
+
+        [Description("SCP 914 Knob Transformations settings")]
+        public Dictionary<Scp914KnobSetting, bool> KnobSettingEnabled { get; set; } = new()
+        {
+            { Scp914KnobSetting.Rough, true },
+            { Scp914KnobSetting.Coarse, true },
+            { Scp914KnobSetting.OneToOne, true },
+            { Scp914KnobSetting.Fine, true },
+            { Scp914KnobSetting.VeryFine, true },
+        };
     }
 
     public class KeycardEventSettings

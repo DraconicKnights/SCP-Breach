@@ -1,5 +1,6 @@
 using LabApi.Events.Arguments.Scp914Events;
 using LabApi.Events.CustomHandlers;
+using LabApi.Features.Console;
 using LabApi.Features.Wrappers;
 using PlayerRoles;
 using SCP_Breach.Attributes;
@@ -12,13 +13,12 @@ namespace SCP_Breach.Events;
 [Event("SCP 914 Interaction Event", 1)]
 public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP914EventSettings>
 {
+   
     public override void OnScp914ProcessedPlayer(Scp914ProcessedPlayerEventArgs ev)
     {
         base.OnScp914ProcessedPlayer(ev);
         
-        var player = ev.Player; 
-        
-        PlayerRoleCheck(player, player.Role, ev.KnobSetting);
+        PlayerRoleCheck(ev.Player, ev.Player.Role, ev.KnobSetting);
     }
 
     public override void OnScp914ProcessingInventoryItem(Scp914ProcessingInventoryItemEventArgs ev)
@@ -27,88 +27,61 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
 
         foreach (var item in ev.Player.Items)
         {
+            PlayerItemCheck(ev.Player, item, ev.KnobSetting);;
+        }
+    }
+
+    private void PlayerItemCheck(Player player, Item item, Scp914KnobSetting knobSetting)
+    {
+        if (!GetConfig().Scp914Events.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
+
+        var transformations = GetItemTransformationDictionary(knobSetting);
+        
+        if (transformations.TryGetValue(item.Type, out var newItem))
+        {
+            try
+            {
+                UnityEngine.Object.Destroy(item.Base.gameObject);
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Error while destroying item {item.Type.ToString()}: {e.Message}\n{e.StackTrace}");
+                throw;
+            }
             
+            player.AddItem(newItem);
         }
     }
 
     private void PlayerRoleCheck(Player player, RoleTypeId roleTypeId, Scp914KnobSetting knobSetting)
     {
-        switch (knobSetting)
-        {
-            case Scp914KnobSetting.Rough:
-                switch (roleTypeId)
-                {
-                    case RoleTypeId.ClassD:
-                        player.SetRole(RoleTypeId.Scp0492, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-            
-                    case RoleTypeId.ChaosConscript:
-                        player.SetRole(RoleTypeId.ClassD, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.ChaosRifleman:
-                        player.SetRole(RoleTypeId.ChaosConscript, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.ChaosMarauder:
-                        player.SetRole(RoleTypeId.ChaosRifleman,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.ChaosRepressor:
-                        player.SetRole(RoleTypeId.ChaosMarauder,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-            
-                    case RoleTypeId.FacilityGuard:
-                        player.SetRole(RoleTypeId.Scientist,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.NtfPrivate:
-                        player.SetRole(RoleTypeId.FacilityGuard,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.NtfSergeant:
-                        player.SetRole(RoleTypeId.NtfPrivate,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.NtfCaptain:
-                        player.SetRole(RoleTypeId.NtfSergeant,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-            
-                    case RoleTypeId.Scientist:
-                        player.SetRole(RoleTypeId.ClassD,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                }
-                break;
-            case Scp914KnobSetting.Coarse:
-                break;
-            case Scp914KnobSetting.OneToOne:
-                break;
-            case Scp914KnobSetting.Fine:
-                break;
-            case Scp914KnobSetting.VeryFine:
-                switch (roleTypeId)
-                {
-                    case RoleTypeId.ClassD:
-                        player.SetRole(RoleTypeId.Scientist,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-            
-                    case RoleTypeId.ChaosConscript:
-                        player.SetRole(RoleTypeId.ChaosRifleman,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.ChaosRifleman:
-                        player.SetRole(RoleTypeId.ChaosConscript,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.ChaosMarauder:
-                        player.SetRole(RoleTypeId.ChaosRepressor,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-            
-                    case RoleTypeId.FacilityGuard:
-                        player.SetRole(RoleTypeId.NtfPrivate,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.NtfPrivate:
-                        player.SetRole(RoleTypeId.NtfSergeant,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                    case RoleTypeId.NtfSergeant:
-                        player.SetRole(RoleTypeId.NtfCaptain,  RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-                        break;
-                }
-                break;
-        }
+        if (!GetConfig().Scp914Events.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
         
+        var transformations = GetRoleTransformationDictionary(knobSetting);
+        
+        if (transformations.TryGetValue(roleTypeId, out var newRole))
+        {
+            player.SetRole(newRole, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
+        }
+    }
+    
+    private Dictionary<RoleTypeId, RoleTypeId> GetRoleTransformationDictionary(Scp914KnobSetting knobSetting)
+    {
+        return (knobSetting switch
+        {
+            Scp914KnobSetting.Rough => GetConfig().Scp914Events.RoleRoughTransformations,
+            Scp914KnobSetting.VeryFine => GetConfig().Scp914Events.RoleVeryFineTransformations,
+            _ => null
+        })!;
+    }
+    
+    private Dictionary<ItemType, ItemType> GetItemTransformationDictionary(Scp914KnobSetting knobSetting)
+    {
+        return (knobSetting switch
+        {
+            Scp914KnobSetting.Rough => GetConfig().Scp914Events.ItemRoughTransformations,
+            _ => null
+        })!;
     }
     
     public override bool IsEnabled(BreachConfig.SCP914EventSettings section)
