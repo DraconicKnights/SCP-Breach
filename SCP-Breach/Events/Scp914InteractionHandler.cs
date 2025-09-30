@@ -1,6 +1,5 @@
-using InventorySystem.Items;
 using LabApi.Events.Arguments.Scp914Events;
-using LabApi.Events.CustomHandlers;
+using LabApi.Events.Arguments.ServerEvents;
 using LabApi.Features.Console;
 using LabApi.Features.Wrappers;
 using PlayerRoles;
@@ -14,7 +13,13 @@ namespace SCP_Breach.Events;
 [Event("SCP 914 Interaction Event", 1)]
 public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP914EventSettings>
 {
-   
+    private readonly Dictionary<Player, IReadOnlyCollection<ItemType>> _itemsToGive = new();
+    public override void OnServerRoundEnded(RoundEndedEventArgs ev)
+    {
+        base.OnServerRoundEnded(ev);
+        _itemsToGive.Clear();
+    }
+
     public override void OnScp914ProcessedPlayer(Scp914ProcessedPlayerEventArgs ev)
     {
         base.OnScp914ProcessedPlayer(ev);
@@ -22,36 +27,67 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
         PlayerRoleCheck(ev.Player, ev.Player.Role, ev.KnobSetting);
     }
 
+    public override void OnScp914ProcessedPickup(Scp914ProcessedPickupEventArgs ev)
+    {
+        base.OnScp914ProcessedPickup(ev);
+        
+        if (ev.Pickup == null) return;
+    }
+
     public override void OnScp914ProcessingInventoryItem(Scp914ProcessingInventoryItemEventArgs ev)
     {
         base.OnScp914ProcessingInventoryItem(ev);
-
-        foreach (var item in ev.Player.Items)
-        {
-            PlayerItemCheck(ev.Player, item, ev.KnobSetting);;
-        }
+        
+        ev.IsAllowed = false;
+        
+        PlayerItemCheck(ev.Player, ev.KnobSetting);
     }
 
-    private void PlayerItemCheck(Player player, Item item, Scp914KnobSetting knobSetting)
+    private void PlayerItemCheck(Player player, Scp914KnobSetting knobSetting)
     {
         if (!GetConfig().Scp914Events.Scp914KnobSettings.KnobSettingEnabled.TryGetValue(knobSetting, out var enabled)) return;
 
+        Logger.Info($"Knob setting {knobSetting.ToString()} is enabled");
         var transformations = GetItemTransformationDictionary(knobSetting);
         
-        if (transformations.TryGetValue(item.Type, out var newItem))
+        var itemsToCheck = player.Items.ToList();
+        
+        Logger.Info($"Checking {itemsToCheck.Count} items for transformations");
+        
+        var newItemsArray = new List<ItemType>();
+        
+        foreach (var playerItem in itemsToCheck)
         {
-            try
+            Logger.Info($"Checking item {playerItem.Type.ToString()} for transformations");
+
+            if (!transformations.TryGetValue(playerItem.Type, out var newItem))
             {
-                player.RemoveItem(item);
-                player.AddItem(newItem);
+                Logger.Info($"Item {playerItem.Type.ToString()} has no transformation");
+                continue;
+            }
+            
+            newItemsArray.Add(newItem);
+        
+            Logger.Info($"Item {playerItem.Type.ToString()} has been found");
+            
+            player.RemoveItem(playerItem);
                 
-                Logger.Info($"Item {item.Type.ToString()} has been transformed to {newItem.ToString()}");
-            }
-            catch (Exception e)
+            Logger.Info($"Item {playerItem.Type.ToString()} has been transformed to {newItem.ToString()}");
+        }
+
+        if (newItemsArray.Count > 0)
+        {
+            _itemsToGive.Add(player, newItemsArray.ToArray());
+            
+            MEC.Timing.CallDelayed(2f, () =>
             {
-                Logger.Error($"Error while destroying item {item.Type.ToString()}: {e.Message}\n{e.StackTrace}");
-                throw;
-            }
+                foreach (var item in _itemsToGive[player])
+                {
+                    player.AddItem(item);
+                }
+
+                _itemsToGive.Remove(player);
+            });
         }
     }
 
@@ -61,10 +97,9 @@ public class Scp914InteractionHandler : ConditionalEventHandler<BreachConfig.SCP
         
         var transformations = GetRoleTransformationDictionary(knobSetting);
         
-        if (transformations.TryGetValue(roleTypeId, out var newRole))
-        {
-            player.SetRole(newRole, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
-        }
+        if (!transformations.TryGetValue(roleTypeId, out var newRole)) return;
+        
+        player.SetRole(newRole, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.None);
     }
     
     private Dictionary<RoleTypeId, RoleTypeId> GetRoleTransformationDictionary(Scp914KnobSetting knobSetting)
